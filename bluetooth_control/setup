@@ -1,0 +1,196 @@
+# 🔵 Raspberry Pi Bluetooth Serial (SPP) Setup Procedure
+
+---
+
+## Step 1: Update and Install Bluetooth Packages
+
+1. Update system:
+```
+sudo apt-get update
+sudo apt-get upgrade -y
+```
+
+2. Install Bluetooth packages:
+```
+sudo apt-get install bluetooth blueman bluez -y
+```
+
+3. (Only if using BlueDot separately)
+```
+sudo pip3 install bluedot
+sudo pip3 install bluedot --upgrade
+```
+
+4. Install Bluetooth audio support (optional):
+```
+sudo apt install pulseaudio-module-bluetooth
+pulseaudio -k
+pulseaudio --start
+```
+
+5. Reboot system:
+```
+sudo reboot
+```
+
+---
+
+## Step 2: Troubleshooting (If Bluetooth Icon Not Visible)
+
+1. Install required services:
+```
+sudo apt-get install pi-bluetooth -y
+sudo apt-get install bluez bluez-firmware -y
+sudo apt-get install blueman -y
+```
+
+2. Add user to bluetooth group:
+```
+sudo usermod -G bluetooth -a pi
+```
+
+3. Verify group:
+```
+cat /etc/group | grep bluetooth
+```
+
+Reboot if required.
+
+---
+
+## Step 3: Enable SPP (Serial Port Profile) on Raspberry Pi
+
+1. Open Bluetooth service configuration file:
+```
+sudo nano /etc/systemd/system/dbus-org.bluez.service
+```
+
+2. Locate line starting with:
+```
+ExecStart=
+```
+
+Modify it to:
+```
+ExecStart=/usr/lib/bluetooth/bluetoothd -C
+```
+
+3. Add the following line immediately below it:
+```
+ExecStartPost=/usr/bin/sdptool add SP
+```
+
+4. Reload and restart Bluetooth service:
+```
+sudo systemctl daemon-reload
+sudo systemctl restart bluetooth.service
+```
+
+---
+
+## Step 4: Install Serial Bluetooth Terminal App on Mobile
+
+1. Open Google Play Store (Android) / App Store (iOS).
+2. Search: **Serial Bluetooth Terminal**
+3. Install app developed by **Kai Morich** (Android).
+4. Open the app after installation.
+
+---
+
+## Step 5: Pair Raspberry Pi with Android Phone
+
+### Method A: Using Terminal
+
+1. Launch Bluetooth control tool:
+```
+bluetoothctl
+```
+
+2. Enable discoverability:
+```
+power on
+agent on
+default-agent
+discoverable on
+pairable on
+```
+
+3. On Android:
+   - Open Bluetooth settings
+   - Scan and select Raspberry Pi
+   - Confirm pairing
+
+4. Terminal should display:
+```
+[CHG] Device XX:XX:XX:XX:XX:XX Paired: yes
+```
+
+5. Exit:
+```
+Ctrl + D
+```
+
+---
+
+### Method B: Using GUI
+
+1. Click Bluetooth icon (top-right taskbar).
+2. Select “Add Device” or “Make Discoverable”.
+3. Pair from your mobile device.
+4. Accept pairing request on both devices.
+
+---
+
+## Step 6: Establish Bluetooth Serial Connection
+
+1. On Raspberry Pi, listen for connection:
+```
+sudo rfcomm watch hci0
+```
+
+2. Expected output:
+```
+Waiting for connection on channel 1
+Connection from XX:XX:XX:XX:XX:XX to /dev/rfcomm0
+```
+
+3. On Android:
+   - Open Serial Bluetooth Terminal app
+   - Select Raspberry Pi device
+   - Connect
+
+---
+
+## Step 7: Serial Communication Test
+
+1. Open new terminal on Raspberry Pi.
+
+2. Install minicom:
+```
+sudo apt install minicom -y
+```
+
+3. Run:
+```
+minicom -b 9600 -o -D /dev/rfcomm0
+```
+
+4. Send and receive messages between:
+   - Raspberry Pi terminal
+   - Android Serial Bluetooth Terminal app
+
+To exit minicom:
+```
+CTRL + A → Z → X
+```
+
+---
+
+# ✅ Communication Flow
+
+Android App  
+→ Bluetooth (SPP)  
+→ RFCOMM  
+→ /dev/rfcomm0  
+→ Python / Terminal  
+→ Motor Control
